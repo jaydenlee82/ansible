@@ -1,0 +1,23 @@
+---
+- name: CPU 리소스 모니터링 이벤트 수신
+  hosts: all
+  sources:
+    - name: 모니터링/테스트 웹훅 수신
+      ansible.eda.webhook:
+        host: 0.0.0.0
+        port: 9000
+ 
+  rules:
+    - name: CPU 임계치 초과 시 점검 Job 실행
+      condition: >
+        event.data.resourceType == "CPU" and
+        event.data.severity != "해제"
+      action:
+        run_job_template:
+          name: JT_CPU_Check
+          organization: Default
+          job_args:
+            extra_vars:
+              target_hostname: "{{ event.data.hostname }}"
+              sourceValue: "{{ event.data.sourceValue }}"
+
