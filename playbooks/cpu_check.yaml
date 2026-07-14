@@ -1,0 +1,36 @@
+---
+- name: CPU 사용률 TOP 프로세스 점검
+  hosts: "{{ target_hostname }}"
+  gather_facts: true
+  vars:
+    log_dir: /home/jaejin/rhaap-test-logs
+ 
+  tasks:
+    - name: 로그 저장 디렉터리 준비
+      ansible.builtin.file:
+        path: "{{ log_dir }}"
+        state: directory
+        mode: "0750"
+    - name: CPU 사용률 상위 20개 프로세스 조회
+      ansible.builtin.shell: |
+        ps -o user,pid,%cpu,%mem,vsz,rss,tty,start,time,command -ax | head -1
+        ps -o user,pid,%cpu,%mem,vsz,rss,tty,start,time,command -ax | sort -rnk 3 | grep -v '%CPU' | head -20
+      register: top_processes
+      changed_when: false
+ 
+    - name: 조회 결과를 화면(Job 로그)에 출력
+      ansible.builtin.debug:
+        msg: "{{ top_processes.stdout_lines }}"
+ 
+    - name: 조회 결과를 대상 서버 로그 파일로 저장
+      ansible.builtin.copy:
+        dest: "{{ log_dir }}/cpu_alert_{{ ansible_date_time.iso8601_basic_short }}.log"
+        mode: "0640"
+        content: |
+          Host            : {{ inventory_hostname }}
+          CPU 알림 값      : {{ sourceValue | default('N/A') }}
+          점검 시각        : {{ ansible_date_time.iso8601 }}
+          =========================================
+          {{ top_processes.stdout }}
+          =========================================
+
