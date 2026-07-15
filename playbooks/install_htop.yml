@@ -1,0 +1,22 @@
+---
+- name: htop 패키지 설치
+  hosts: "{{ target_hostname | default('target.jaejin.mtp.local') }}"
+  become: true
+  gather_facts: true
+  tasks:
+    - name: htop 설치
+      ansible.builtin.dnf:
+        name: htop
+        state: present
+      register: htop_install
+
+    - name: htop 버전 확인
+      ansible.builtin.command: htop --version
+      register: htop_version
+      changed_when: false
+
+    - name: 결과 출력
+      ansible.builtin.debug:
+        msg:
+          - "설치 여부: {{ '새로 설치됨' if htop_install.changed else '이미 설치되어 있음' }}"
+          - "{{ htop_version.stdout_lines[0] }}"
