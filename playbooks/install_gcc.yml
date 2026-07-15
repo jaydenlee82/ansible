@@ -1,0 +1,22 @@
+---
+- name: gcc 패키지 설치
+  hosts: "{{ target_hostname | default('target.jaejin.mtp.local') }}"
+  become: true
+  gather_facts: true
+  tasks:
+    - name: gcc 설치
+      ansible.builtin.dnf:
+        name: gcc
+        state: present
+      register: gcc_install
+
+    - name: gcc 버전 확인
+      ansible.builtin.command: gcc --version
+      register: gcc_version
+      changed_when: false
+
+    - name: 결과 출력
+      ansible.builtin.debug:
+        msg:
+          - "설치 여부: {{ '새로 설치됨' if gcc_install.changed else '이미 설치되어 있음' }}"
+          - "{{ gcc_version.stdout_lines[0] }}"
